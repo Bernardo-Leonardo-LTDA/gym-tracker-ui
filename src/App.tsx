@@ -1,4 +1,4 @@
-import { Button } from "./components/ui/button"
+import { Button } from './components/ui/button';
 
 function App() {
   return (
@@ -6,7 +6,7 @@ function App() {
       <h1>Hello Vite + React!</h1>
       <Button>oi</Button>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
