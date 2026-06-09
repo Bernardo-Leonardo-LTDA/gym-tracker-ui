@@ -11,17 +11,16 @@ export function SpotifyWidget() {
 
   useEffect(() => {
     const eventSource = new EventSource(
-      'http://localhost:3000/spotify/status-stream?userId=meu-usuario-teste'
+      `${import.meta.env.VITE_API_BASE_URL}/spotify/status-stream?userId=meu-usuario-teste`
     );
 
     eventSource.onmessage = (event) => {
-      console.log('Dados recebidos do SSE:', event.data);
       const musicData = JSON.parse(event.data);
       setTrack(musicData);
     };
 
     eventSource.onerror = (err) => {
-      console.error('Erro na conexão de streaming SSE', err);
+      console.error('SSE streaming connection error', err);
     };
 
     return () => {

@@ -8,7 +8,7 @@ function App() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleSpotifyLogin = () => {
-    window.location.href = 'http://localhost:3000/spotify/login';
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/spotify/login`;
   };
 
   useEffect(() => {
@@ -25,7 +25,7 @@ function App() {
 
       try {
         const response = await axios.get(
-          'http://localhost:3000/spotify/sync-web'
+          `${import.meta.env.VITE_API_BASE_URL}/spotify/sync-web`
         );
         console.log('Dados do Spotify:', response.data);
       } catch (error) {
