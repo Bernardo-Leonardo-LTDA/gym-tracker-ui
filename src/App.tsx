@@ -3,12 +3,21 @@ import { Button } from './components/ui/button';
 import { SpotifyWidget } from './features/SpotifyWidget';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 function App() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const handleSpotifyLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/spotify/login`;
+    const loginUrl = new URL(
+      `${import.meta.env.VITE_API_BASE_URL}/spotify/login`
+    );
+
+    if (Capacitor.isNativePlatform()) {
+      loginUrl.searchParams.set('mobile', '1');
+    }
+
+    window.location.href = loginUrl.toString();
   };
 
   useEffect(() => {
