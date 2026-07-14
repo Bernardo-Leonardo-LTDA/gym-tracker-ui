@@ -15,10 +15,9 @@ interface AuthOptions {
   pkceEnabled: boolean;
 }
 
-const REDIRECT_URL: string =
-  Capacitor.getPlatform() === 'web'
-    ? 'http://127.0.0.1:3000/auth/spotify/callback'
-    : 'com.gymtracker.app://callback';
+const REDIRECT_URL: string = Capacitor.isNativePlatform()
+  ? import.meta.env.VITE_SPOTIFY_REDIRECT_MOBILE
+  : import.meta.env.VITE_SPOTIFY_REDIRECT_WEB;
 
 const OAUTH_OPTIONS: AuthOptions = {
   authorizationBaseUrl: 'https://accounts.spotify.com/authorize',
@@ -26,8 +25,7 @@ const OAUTH_OPTIONS: AuthOptions = {
   clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID,
   redirectUrl: REDIRECT_URL,
   responseType: 'code',
-  scope:
-    'user-read-private user-read-email user-read-currently-playing user-read-playback-state',
+  scope: import.meta.env.VITE_SPOTIFY_SCOPES,
   pkceEnabled: true,
 };
 
