@@ -7,13 +7,11 @@ export interface SpotifyTokenResponse {
 }
 
 export interface SpotifyTrack {
-  is_playing: boolean;
-  item: {
-    name: string;
-    artists: { name: string }[];
-    duration_ms: number;
-  } | null;
-  progress_ms: number;
+  artist: string;
+  durationMs: number;
+  isPlaying: boolean;
+  progressMs: number;
+  trackName: string;
 }
 
 export const spotifyApi = {
@@ -33,5 +31,9 @@ export const spotifyApi = {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     return data;
+  },
+
+  syncWeb: async (accessToken: string, userId: string): Promise<void> => {
+    await api.post('/spotify/web/sync', { accessToken, userId });
   },
 };

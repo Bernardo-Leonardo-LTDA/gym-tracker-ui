@@ -58,6 +58,11 @@ export function Spotify() {
     }
   };
 
+  const handleLogout = () => {
+    clearTokens();
+    setTrack(null);
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenFromUrl = params.get('accessToken');
@@ -70,13 +75,17 @@ export function Spotify() {
   useEffect(() => {
     if (!accessToken) return;
 
+    void spotifyApi.syncWeb(accessToken, 'user123');
+
     const eventSource = new EventSource(
-      `${import.meta.env.VITE_API_BASE_URL}/spotify/status-stream?userId=user123`
+      `${import.meta.env.VITE_API_BASE_URL}/spotify/web/status-stream?userId=user123`
     );
 
     eventSource.onmessage = (event) => {
+      console.log('Received SSE message:', event.data);
       const musicData: SpotifyTrack = JSON.parse(event.data);
       setTrack(musicData);
+      console.log('Updated track state:', musicData);
     };
 
     eventSource.onerror = (err) => {
@@ -94,7 +103,7 @@ export function Spotify() {
           <Button onClick={handleLogin}>Login</Button>
         ) : (
           <>
-            <Button variant="outline" onClick={clearTokens}>
+            <Button variant="outline" onClick={handleLogout}>
               Logout
             </Button>
             <Button onClick={handleRefresh}>Atualizar</Button>
@@ -102,14 +111,14 @@ export function Spotify() {
         )}
       </div>
       <div className="p-2 border border-green-500 rounded-md w-fit">
-        {track?.is_playing ? (
+        {track?.isPlaying ? (
           <div>
             <h3>Ouvindo agora:</h3>
             <p>
-              <strong>Música:</strong> {track.item?.name}
+              <strong>Música:</strong> {track.trackName}
             </p>
             <p>
-              <strong>Artista:</strong> {track.item?.artists[0]?.name}
+              <strong>Artista:</strong> {track.artist}
             </p>
           </div>
         ) : (
