@@ -11,10 +11,17 @@
 
 ## 📐ENV
 
-- You should create an .env file to add these env vars:
+Create a `.env` file at the root with the following variables:
 
 ```shell
-VITE_API_BASE_URL=http://127.0.0.1:3000
+# API
+VITE_API_BASE_URL=YOUR-API-BASE-URL-HERE
+
+# Spotify
+VITE_SPOTIFY_CLIENT_ID=YOUR-CLIENT-ID-HERE
+VITE_SPOTIFY_REDIRECT_URI_WEB=YOUR-WEB-REDIRECT-URI-HERE
+VITE_SPOTIFY_REDIRECT_URI_MOBILE=YOUR-MOBILE-REDIRECT-URI-HERE
+VITE_SPOTIFY_SCOPES=YOUR-SPOTIFY-SCOPES-HERE
 ```
 
 When testing on Android (Capacitor), `127.0.0.1` points to the device/emulator itself, not your computer backend.
