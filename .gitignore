@@ -34,3 +34,6 @@ dist-ssr
 # Capacitor generated folders
 /android/
 /ios/
+
+# Prototype folders
+/prototype/

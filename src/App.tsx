@@ -1,11 +1,7 @@
-import { Spotify } from './features/Spotify';
+import { AppRoutes } from './routes';
 
 function App() {
-  return (
-    <>
-      <Spotify />
-    </>
-  );
+  return <AppRoutes />;
 }
 
 export default App;
