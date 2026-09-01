@@ -175,6 +175,6 @@ function persistUser(userId: string, userName: string): void {
     localStorage.setItem(STORAGE_USER_ID_KEY, userId);
     localStorage.setItem(STORAGE_USER_NAME_KEY, userName);
   } catch {
-    // Storage is unavailable in some privacy modes.
+    // Ignore unavailable storage.
   }
 }

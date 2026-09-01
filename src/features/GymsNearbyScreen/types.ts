@@ -1,7 +1,3 @@
-// Backend contract: gym-tracker-service/src/modules/gyms/gyms.controller.ts
-// POST /gyms/check-in  -> { gymId, userId, userName } => User
-// GET  /gyms/search    -> Partial<PlaceData>[]  (new Places API shape)
-
 export type Gym = {
   id: string;
   name: string;
@@ -11,10 +7,6 @@ export type Gym = {
   photo: string;
 };
 
-// Raw shape returned by backend search. MapsService now uses the new Places API
-// (places.googleapis.com/v1/places:searchNearby) with FieldMask
-// `places.id,places.displayName,places.formattedAddress,places.rating`
-// at `gym-tracker-service/src/shared/services/maps/maps.service.ts:56`.
 export type PlacesApiPlace = {
   id: string;
   displayName?: { text: string; languageCode?: string };
@@ -38,7 +30,6 @@ export type User = {
 
 export type CheckInPayload = {
   gymId: string;
-  /** UUID v4 - backend enforces ParseUUIDPipe (gyms.controller.ts:42) */
   userId: string;
   userName: string;
 };
