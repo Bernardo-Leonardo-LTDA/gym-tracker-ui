@@ -15,6 +15,7 @@ function findByQuery(_query: string): void {
 function fetchNearbyCount(): { count: number; updatedAt: string } {
   throw new Error("Not implemented");
 }
+void fetchNearbyCount;
 
 export function FindScreen() {
   const [query, setQuery] = useState("");
