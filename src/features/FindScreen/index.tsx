@@ -146,20 +146,6 @@ export function FindScreen() {
                 {feedback.message}
               </p>
             )}
-
-            <Button
-              variant="ghost"
-              onClick={() =>
-                setFeedback({
-                  message: 'Gym suggestions are not available yet.',
-                  isError: false,
-                })
-              }
-              disabled={isSearching}
-              className="w-full h-12 text-muted-foreground text-sm"
-            >
-              Don't see your gym?
-            </Button>
           </div>
 
           <div className="mt-12">
