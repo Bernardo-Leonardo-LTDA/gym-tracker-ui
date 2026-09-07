@@ -10,7 +10,7 @@ vi.mock('@/lib/api', () => ({
 import { api } from '@/lib/api';
 import {
   checkIn,
-  fetchCheckedInUserCount,
+  fetchCheckedInUserCounts,
   fetchCheckedUsersInMyGym,
 } from './gyms.service';
 
@@ -59,13 +59,17 @@ describe('checkIn', () => {
     });
   });
 
-  it('gets the public attendee count for a gym', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: { count: 4 } });
+  it('gets the public attendee counts for all requested gyms', async () => {
+    vi.mocked(api.post).mockResolvedValue({
+      data: { 'place-1': 4, 'place-2': 0 },
+    });
 
-    await expect(fetchCheckedInUserCount('place-1')).resolves.toBe(4);
+    await expect(
+      fetchCheckedInUserCounts(['place-1', 'place-2'])
+    ).resolves.toEqual({ 'place-1': 4, 'place-2': 0 });
 
-    expect(api.get).toHaveBeenCalledWith('/gyms/checked-users/count', {
-      params: { gymId: 'place-1' },
+    expect(api.post).toHaveBeenCalledWith('/gyms/checked-users/counts', {
+      gymIds: ['place-1', 'place-2'],
     });
   });
 });

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { GymCard } from './components/GymCard';
 import {
   checkIn,
-  fetchCheckedInUserCount,
+  fetchCheckedInUserCounts,
   fetchCheckedUsersInMyGym,
   getStoredUserId,
   getStoredUserName,
@@ -74,24 +74,13 @@ export function GymsNearbyScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    void Promise.allSettled(
-      gyms.map(
-        async (gym) => [gym.id, await fetchCheckedInUserCount(gym.id)] as const
-      )
-    ).then((results) => {
-      if (cancelled) return;
-
-      setActiveCounts((currentCounts) => {
-        const nextCounts = { ...currentCounts };
-        for (const result of results) {
-          if (result.status === 'fulfilled') {
-            const [gymId, count] = result.value;
-            nextCounts[gymId] = count;
-          }
-        }
-        return nextCounts;
+    void fetchCheckedInUserCounts(gyms.map((gym) => gym.id))
+      .then((counts) => {
+        if (!cancelled) setActiveCounts(counts);
+      })
+      .catch(() => {
+        if (!cancelled) setActiveCounts({});
       });
-    });
 
     return () => {
       cancelled = true;
