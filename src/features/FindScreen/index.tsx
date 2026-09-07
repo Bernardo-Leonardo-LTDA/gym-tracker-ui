@@ -83,7 +83,7 @@ export function FindScreen() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background flex items-center justify-center md:py-10">
+    <div className="min-h-dvh w-full bg-background flex items-center justify-center md:py-10">
       <div className="w-full md:max-w-lg md:rounded-3xl md:border md:border-border md:shadow-2xl bg-background">
         <section className="px-6 pt-8 pb-12">
           <header className="mb-10">
