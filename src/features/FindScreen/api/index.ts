@@ -40,17 +40,14 @@ export interface CheckInRequest {
 
 export const gymsApi = {
   search: async (
-    query: string,
-    coordinates?: SearchCoordinates,
+    address: string,
     radius = 5000
   ): Promise<GymSearchResult[]> => {
     const { data } = await api.get<GymSearchResult[] | SearchGymsResponse>(
       '/gyms/search',
       {
         params: {
-          query,
-          latitude: coordinates?.latitude,
-          longitude: coordinates?.longitude,
+          address,
           radius,
         },
       }

@@ -26,8 +26,8 @@ function findByLocation(): Promise<SearchCoordinates> {
   });
 }
 
-function findByQuery(query: string, coordinates?: SearchCoordinates) {
-  return gymsApi.search(query, coordinates);
+function findByAddress(address: string) {
+  return gymsApi.search(address);
 }
 
 function fetchNearbyCount(): { count: number; updatedAt: string } {
@@ -38,7 +38,7 @@ function fetchNearbyCount(): { count: number; updatedAt: string } {
 }
 
 export function FindScreen() {
-  const [query, setQuery] = useState('');
+  const [address, setAddress] = useState('');
   const [coordinates, setCoordinates] = useState<SearchCoordinates | null>(
     null
   );
@@ -47,7 +47,7 @@ export function FindScreen() {
     message: string;
     isError: boolean;
   } | null>(null);
-  const trimmedQuery = query.trim();
+  const trimmedAddress = address.trim();
   const nearby = fetchNearbyCount();
 
   async function handleFind(): Promise<void> {
@@ -55,20 +55,10 @@ export function FindScreen() {
     setFeedback(null);
 
     try {
-      if (trimmedQuery) {
-        let searchCoordinates = coordinates ?? undefined;
-        if (!searchCoordinates) {
-          try {
-            searchCoordinates = await findByLocation();
-            setCoordinates(searchCoordinates);
-          } catch {
-            // Text search still works by relevance without location access.
-          }
-        }
-
-        const gyms = await findByQuery(trimmedQuery, searchCoordinates);
+      if (trimmedAddress) {
+        const gyms = await findByAddress(trimmedAddress);
         setFeedback({
-          message: `${gyms.length} ${gyms.length === 1 ? 'gym' : 'gyms'} found${searchCoordinates ? ' nearby' : ''}.`,
+          message: `${gyms.length} ${gyms.length === 1 ? 'gym' : 'gyms'} found near this address.`,
           isError: false,
         });
         return;
@@ -114,12 +104,12 @@ export function FindScreen() {
                 size={18}
               />
               <Input
-                value={query}
+                value={address}
                 onChange={(e) => {
-                  setQuery(e.target.value);
+                  setAddress(e.target.value);
                   setFeedback(null);
                 }}
-                placeholder="Search by gym name or area"
+                placeholder="Search by address or area"
                 className="h-14 pl-12 rounded-2xl bg-muted text-sm"
               />
             </div>
@@ -127,17 +117,19 @@ export function FindScreen() {
             <Button
               onClick={handleFind}
               disabled={isSearching}
-              title={trimmedQuery ? `Search for “${trimmedQuery}”` : undefined}
+              title={
+                trimmedAddress ? `Search near “${trimmedAddress}”` : undefined
+              }
               className="w-full min-w-0 h-14 overflow-hidden rounded-2xl text-base gap-2"
             >
-              {trimmedQuery ? <Search size={18} /> : <Crosshair size={18} />}
+              {trimmedAddress ? <Search size={18} /> : <Crosshair size={18} />}
               <span className="min-w-0 truncate">
                 {isSearching
-                  ? trimmedQuery
+                  ? trimmedAddress
                     ? 'Searching...'
                     : 'Getting location...'
-                  : trimmedQuery
-                    ? `Search for “${trimmedQuery}”`
+                  : trimmedAddress
+                    ? `Search near “${trimmedAddress}”`
                     : 'Use my location'}
               </span>
             </Button>
