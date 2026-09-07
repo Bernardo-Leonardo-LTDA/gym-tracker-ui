@@ -100,6 +100,16 @@ export async function fetchCheckedUsersInMyGym(
   return data;
 }
 
+export async function fetchCheckedInUserCount(gymId: string): Promise<number> {
+  const { data } = await api.get<{ count: number }>(
+    '/gyms/checked-users/count',
+    {
+      params: { gymId },
+    }
+  );
+  return data.count;
+}
+
 export async function checkOut(userId: string): Promise<void> {
   await api.post('/gyms/check-out', { userId });
 }

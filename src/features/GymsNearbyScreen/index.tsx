@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { GymCard } from './components/GymCard';
 import {
   checkIn,
+  fetchCheckedInUserCount,
   fetchCheckedUsersInMyGym,
   getStoredUserId,
   getStoredUserName,
@@ -63,8 +64,39 @@ export function GymsNearbyScreen() {
   const [successId, setSuccessId] = useState<string | null>(null);
   const [checkedInGymId, setCheckedInGymId] = useState<string | null>(null);
   const [checkedUsers, setCheckedUsers] = useState<User[]>([]);
-  const gyms = toGyms(location.state?.gyms, FALLBACK_GYMS);
+  const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
+  const gyms = useMemo(
+    () => toGyms(location.state?.gyms, FALLBACK_GYMS),
+    [location.state?.gyms]
+  );
   const filteredGyms = filterGyms(gyms, query);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void Promise.allSettled(
+      gyms.map(
+        async (gym) => [gym.id, await fetchCheckedInUserCount(gym.id)] as const
+      )
+    ).then((results) => {
+      if (cancelled) return;
+
+      setActiveCounts((currentCounts) => {
+        const nextCounts = { ...currentCounts };
+        for (const result of results) {
+          if (result.status === 'fulfilled') {
+            const [gymId, count] = result.value;
+            nextCounts[gymId] = count;
+          }
+        }
+        return nextCounts;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gyms]);
 
   function goBack(): void {
     if (window.history.length > 1) {
@@ -89,6 +121,10 @@ export function GymsNearbyScreen() {
       setSuccessId(gym.id);
       setCheckedInGymId(gym.id);
       setCheckedUsers(currentGymUsers);
+      setActiveCounts((currentCounts) => ({
+        ...currentCounts,
+        [gym.id]: currentGymUsers.length,
+      }));
     } catch (checkInError) {
       setError(getRequestErrorMessage(checkInError));
     } finally {
@@ -161,9 +197,7 @@ export function GymsNearbyScreen() {
               <li key={gym.id}>
                 <GymCard
                   gym={gym}
-                  activeCount={
-                    checkedInGymId === gym.id ? checkedUsers.length : gym.active
-                  }
+                  activeCount={activeCounts[gym.id] ?? gym.active}
                   isChecking={checkingId === gym.id}
                   isCheckedIn={successId === gym.id}
                   onCheckIn={handleCheckIn}
