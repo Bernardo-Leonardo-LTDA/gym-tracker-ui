@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Search, Crosshair } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Equalizer } from './Equalizer';
 import { gymsApi, type SearchCoordinates } from './api';
 
 function findByLocation(): Promise<SearchCoordinates> {
@@ -30,13 +28,6 @@ function findByAddress(address: string) {
   return gymsApi.search(address);
 }
 
-function fetchNearbyCount(): { count: number; updatedAt: string } {
-  return {
-    count: 2,
-    updatedAt: 'just now',
-  };
-}
-
 export function FindScreen() {
   const [address, setAddress] = useState('');
   const [coordinates, setCoordinates] = useState<SearchCoordinates | null>(
@@ -48,8 +39,6 @@ export function FindScreen() {
     isError: boolean;
   } | null>(null);
   const trimmedAddress = address.trim();
-  const nearby = fetchNearbyCount();
-
   async function handleFind(): Promise<void> {
     setIsSearching(true);
     setFeedback(null);
@@ -146,27 +135,6 @@ export function FindScreen() {
                 {feedback.message}
               </p>
             )}
-          </div>
-
-          <div className="mt-12">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
-              Live right now
-            </p>
-            <Card className="p-5 flex-row items-center gap-4">
-              <div className="relative shrink-0">
-                <div className="h-3 w-3 rounded-full bg-primary animate-pulse" />
-                <div className="absolute inset-0 h-3 w-3 rounded-full bg-primary blur-md opacity-60" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-foreground font-semibold text-sm">
-                  {nearby.count} lifters checked in nearby
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Updated {nearby.updatedAt}
-                </p>
-              </div>
-              <Equalizer />
-            </Card>
           </div>
         </section>
       </div>
