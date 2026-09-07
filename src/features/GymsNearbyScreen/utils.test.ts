@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Gym, PlacesApiPlace } from './types';
-import { filterGyms, getRequestErrorMessage, toGyms } from './utils';
+import { getRequestErrorMessage, toGyms } from './utils';
 
 const fallbackGym: Gym = {
   id: 'fallback',
@@ -33,16 +33,6 @@ describe('nearby gym result helpers', () => {
         distance: '—',
       }),
     ]);
-  });
-
-  it('filters gym names and areas without case or surrounding-space sensitivity', () => {
-    const gyms: Gym[] = [
-      fallbackGym,
-      { ...fallbackGym, id: 'second', name: 'Iron Temple', area: 'Centro' },
-    ];
-
-    expect(filterGyms(gyms, '  CENTRO ')).toEqual([gyms[1]]);
-    expect(filterGyms(gyms, '')).toEqual(gyms);
   });
 
   it('uses a safe fallback for non-Error failures', () => {

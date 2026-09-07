@@ -3,7 +3,6 @@ import { ArrowLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { GymCard } from './components/GymCard';
 import {
   checkIn,
@@ -14,7 +13,7 @@ import {
 } from './services/gyms.service';
 import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from './types';
 import type { Gym, PlacesApiPlace, User } from './types';
-import { filterGyms, getRequestErrorMessage, toGyms } from './utils';
+import { getRequestErrorMessage, toGyms } from './utils';
 
 const FALLBACK_GYMS: Gym[] = [
   {
@@ -58,7 +57,6 @@ const UUID_RE =
 export function GymsNearbyScreen() {
   const navigate = useNavigate();
   const location = useLocation() as { state: LocationState | null };
-  const [query, setQuery] = useState('');
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
@@ -69,8 +67,6 @@ export function GymsNearbyScreen() {
     () => toGyms(location.state?.gyms, FALLBACK_GYMS),
     [location.state?.gyms]
   );
-  const filteredGyms = filterGyms(gyms, query);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -165,12 +161,6 @@ export function GymsNearbyScreen() {
               Tap a gym to check in.
             </p>
           </header>
-          <Input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter results"
-            className="h-12 rounded-2xl bg-muted text-sm"
-          />
           {error && (
             <div className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
@@ -182,7 +172,7 @@ export function GymsNearbyScreen() {
             </div>
           )}
           <ul className="mt-5 space-y-3">
-            {filteredGyms.map((gym) => (
+            {gyms.map((gym) => (
               <li key={gym.id}>
                 <GymCard
                   gym={gym}
@@ -218,11 +208,6 @@ export function GymsNearbyScreen() {
               </li>
             ))}
           </ul>
-          {filteredGyms.length === 0 && (
-            <p className="mt-12 text-center text-sm text-muted-foreground">
-              No gyms match &quot;{query}&quot;.
-            </p>
-          )}
         </section>
       </div>
     </div>

@@ -12,15 +12,6 @@ export function toGyms(
   );
 }
 
-export function filterGyms(gyms: Gym[], query: string): Gym[] {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return gyms;
-
-  return gyms.filter((gym) =>
-    `${gym.name} ${gym.area}`.toLowerCase().includes(normalizedQuery)
-  );
-}
-
 export function getRequestErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return 'Failed to check in. Please try again.';
