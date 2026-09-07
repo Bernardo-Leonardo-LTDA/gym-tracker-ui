@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/api', () => ({
   api: {
+    get: vi.fn(),
     post: vi.fn(),
   },
 }));
 
 import { api } from '@/lib/api';
-import { checkIn } from './gyms.service';
+import { checkIn, fetchCheckedUsersInGym } from './gyms.service';
 
 const validUserId = '79aa1147-c20c-44f3-8524-b7071ee1af12';
 
@@ -39,6 +40,16 @@ describe('checkIn', () => {
       gymId: 'place-1',
       userId: validUserId,
       userName: 'Ana',
+    });
+  });
+
+  it('gets checked-in users by gym without requiring a user ID', async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: [] });
+
+    await expect(fetchCheckedUsersInGym('place-1')).resolves.toEqual([]);
+
+    expect(api.get).toHaveBeenCalledWith('/gyms/checked-users', {
+      params: { gymId: 'place-1' },
     });
   });
 });

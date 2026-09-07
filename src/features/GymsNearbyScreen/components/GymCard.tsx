@@ -4,6 +4,7 @@ import type { Gym } from '../types';
 
 type GymCardProps = {
   gym: Gym;
+  activeCount: number;
   isChecking: boolean;
   isCheckedIn: boolean;
   onCheckIn: (gym: Gym) => void;
@@ -11,6 +12,7 @@ type GymCardProps = {
 
 export function GymCard({
   gym,
+  activeCount,
   isChecking,
   isCheckedIn,
   onCheckIn,
@@ -40,7 +42,7 @@ export function GymCard({
             <span className="relative size-2 animate-pulse rounded-full bg-primary" />
           </span>
           <span className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{gym.active}</span>{' '}
+            <span className="font-semibold text-foreground">{activeCount}</span>{' '}
             lifting now
           </span>
         </div>
