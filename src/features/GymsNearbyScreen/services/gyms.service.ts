@@ -90,9 +90,12 @@ export async function checkIn(payload: CheckInPayload): Promise<User> {
   return data;
 }
 
-export async function fetchCheckedUsersInGym(gymId: string): Promise<User[]> {
+export async function fetchCheckedUsersInMyGym(
+  gymId: string,
+  userId: string
+): Promise<User[]> {
   const { data } = await api.get<User[]>('/gyms/checked-users', {
-    params: { gymId },
+    params: { gymId, userId },
   });
   return data;
 }

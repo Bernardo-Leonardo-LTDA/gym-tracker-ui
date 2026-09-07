@@ -8,7 +8,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { api } from '@/lib/api';
-import { checkIn, fetchCheckedUsersInGym } from './gyms.service';
+import { checkIn, fetchCheckedUsersInMyGym } from './gyms.service';
 
 const validUserId = '79aa1147-c20c-44f3-8524-b7071ee1af12';
 
@@ -43,13 +43,15 @@ describe('checkIn', () => {
     });
   });
 
-  it('gets checked-in users by gym without requiring a user ID', async () => {
+  it('gets checked-in users for the current user gym', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [] });
 
-    await expect(fetchCheckedUsersInGym('place-1')).resolves.toEqual([]);
+    await expect(
+      fetchCheckedUsersInMyGym('place-1', validUserId)
+    ).resolves.toEqual([]);
 
     expect(api.get).toHaveBeenCalledWith('/gyms/checked-users', {
-      params: { gymId: 'place-1' },
+      params: { gymId: 'place-1', userId: validUserId },
     });
   });
 });

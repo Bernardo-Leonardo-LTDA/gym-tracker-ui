@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,12 +7,12 @@ import { Input } from '@/components/ui/input';
 import { GymCard } from './components/GymCard';
 import {
   checkIn,
-  fetchCheckedUsersInGym,
+  fetchCheckedUsersInMyGym,
   getStoredUserId,
   getStoredUserName,
 } from './services/gyms.service';
 import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from './types';
-import type { Gym, PlacesApiPlace } from './types';
+import type { Gym, PlacesApiPlace, User } from './types';
 import { filterGyms, getRequestErrorMessage, toGyms } from './utils';
 
 const FALLBACK_GYMS: Gym[] = [
@@ -61,40 +61,10 @@ export function GymsNearbyScreen() {
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
-  const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
-  const gyms = useMemo(
-    () => toGyms(location.state?.gyms, FALLBACK_GYMS),
-    [location.state?.gyms]
-  );
+  const [checkedInGymId, setCheckedInGymId] = useState<string | null>(null);
+  const [checkedUsers, setCheckedUsers] = useState<User[]>([]);
+  const gyms = toGyms(location.state?.gyms, FALLBACK_GYMS);
   const filteredGyms = filterGyms(gyms, query);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void Promise.allSettled(
-      gyms.map(
-        async (gym) =>
-          [gym.id, (await fetchCheckedUsersInGym(gym.id)).length] as const
-      )
-    ).then((results) => {
-      if (cancelled) return;
-
-      setActiveCounts((currentCounts) => {
-        const nextCounts = { ...currentCounts };
-        for (const result of results) {
-          if (result.status === 'fulfilled') {
-            const [gymId, count] = result.value;
-            nextCounts[gymId] = count;
-          }
-        }
-        return nextCounts;
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [gyms]);
 
   function goBack(): void {
     if (window.history.length > 1) {
@@ -111,16 +81,14 @@ export function GymsNearbyScreen() {
     try {
       const user = getCheckInUser();
       if (!user) return;
-      await checkIn({ gymId: gym.id, ...user });
+      const checkedInUser = await checkIn({ gymId: gym.id, ...user });
+      const currentGymUsers = await fetchCheckedUsersInMyGym(
+        gym.id,
+        checkedInUser.id
+      );
       setSuccessId(gym.id);
-      void fetchCheckedUsersInGym(gym.id)
-        .then((checkedUsers) => {
-          setActiveCounts((currentCounts) => ({
-            ...currentCounts,
-            [gym.id]: checkedUsers.length,
-          }));
-        })
-        .catch(() => {});
+      setCheckedInGymId(gym.id);
+      setCheckedUsers(currentGymUsers);
     } catch (checkInError) {
       setError(getRequestErrorMessage(checkInError));
     } finally {
@@ -193,11 +161,37 @@ export function GymsNearbyScreen() {
               <li key={gym.id}>
                 <GymCard
                   gym={gym}
-                  activeCount={activeCounts[gym.id] ?? gym.active}
+                  activeCount={
+                    checkedInGymId === gym.id ? checkedUsers.length : gym.active
+                  }
                   isChecking={checkingId === gym.id}
                   isCheckedIn={successId === gym.id}
                   onCheckIn={handleCheckIn}
                 />
+                {checkedInGymId === gym.id && (
+                  <section className="mt-3 rounded-2xl border border-border bg-muted/40 p-4">
+                    <h2 className="text-sm font-semibold text-foreground">
+                      Lifting with you
+                    </h2>
+                    <ul className="mt-3 space-y-2">
+                      {checkedUsers.map((checkedUser) => (
+                        <li
+                          key={checkedUser.id}
+                          className="flex items-center justify-between gap-3 text-sm"
+                        >
+                          <span className="truncate font-medium text-foreground">
+                            {checkedUser.name}
+                          </span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {checkedUser.currentSongTitle
+                              ? `${checkedUser.currentSongTitle} — ${checkedUser.currentSongArtist ?? 'Unknown artist'}`
+                              : 'No music playing'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
               </li>
             ))}
           </ul>
