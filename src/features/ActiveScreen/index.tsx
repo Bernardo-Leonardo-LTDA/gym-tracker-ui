@@ -11,7 +11,7 @@ import {
   getStoredUserId,
   getStoredUserName,
   saveActiveSession,
-} from '@/features/GymsNearbyScreen/services/gyms.service';
+} from '@/features/GymsNearbyScreen/services';
 import type { ActiveSession, User } from '@/features/GymsNearbyScreen/types';
 
 const AVATAR_COLORS = ['#c43632', '#b84e47', '#c59a4a', '#293f41', '#373737'];
@@ -45,7 +45,7 @@ function Avatar({ user, size = 'size-12' }: { user: Pick<User, 'id' | 'name' | '
 }
 
 function trackText(user: User): string {
-  if (user.currentSongTitle) return `${user.currentSongTitle} â€” ${user.currentSongArtist ?? 'Unknown artist'}`;
+  if (user.currentSongTitle) return `${user.currentSongTitle} Ã¢â‚¬â€ ${user.currentSongArtist ?? 'Unknown artist'}`;
   return 'No music playing';
 }
 
@@ -141,7 +141,7 @@ export function ActiveScreen() {
     }
   }
 
-  if (!session) return isRestoring ? <main className="grid min-h-dvh place-items-center bg-background text-sm text-muted-foreground">Restoring your check-inâ€¦</main> : null;
+  if (!session) return isRestoring ? <main className="grid min-h-dvh place-items-center bg-background text-sm text-muted-foreground">Restoring your check-inÃ¢â‚¬Â¦</main> : null;
 
   return (
     <main className="min-h-dvh bg-background px-[22px] py-7 text-foreground md:py-10">
@@ -156,9 +156,9 @@ export function ActiveScreen() {
         </section>
         <section className="mt-7"><div className="flex items-center justify-between"><h2 className="text-base font-bold">On the floor</h2><span className="text-xs text-muted-foreground">{others.length} active</span></div>
           {error && <div role="status" className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}<Button size="icon-xs" variant="ghost" onClick={() => void refresh()} aria-label="Retry refresh"><RefreshCw /></Button></div>}
-          {loading ? <p className="mt-6 text-sm text-muted-foreground">Loading the floorâ€¦</p> : others.length === 0 ? <p className="mt-6 text-sm text-muted-foreground">You have the floor to yourself right now.</p> : <ul className="mt-3 divide-y divide-white/5">{others.map((user) => <li key={user.id} className="flex min-h-[76px] items-center gap-3 py-3"><Avatar user={user} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{user.name}</p><p className="truncate text-xs text-muted-foreground">{trackText(user)}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/10 text-[#ffca63]" aria-hidden="true"><Music2 size={17} /></span></li>)}</ul>}
+          {loading ? <p className="mt-6 text-sm text-muted-foreground">Loading the floorÃ¢â‚¬Â¦</p> : others.length === 0 ? <p className="mt-6 text-sm text-muted-foreground">You have the floor to yourself right now.</p> : <ul className="mt-3 divide-y divide-white/5">{others.map((user) => <li key={user.id} className="flex min-h-[76px] items-center gap-3 py-3"><Avatar user={user} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{user.name}</p><p className="truncate text-xs text-muted-foreground">{trackText(user)}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/10 text-[#ffca63]" aria-hidden="true"><Music2 size={17} /></span></li>)}</ul>}
         </section>
-        <Button variant="ghost" onClick={() => void handleCheckOut()} disabled={isCheckingOut} className="mt-8 w-full text-muted-foreground"><LogOut />{isCheckingOut ? 'Checking outâ€¦' : 'Check out'}</Button>
+        <Button variant="ghost" onClick={() => void handleCheckOut()} disabled={isCheckingOut} className="mt-8 w-full text-muted-foreground"><LogOut />{isCheckingOut ? 'Checking outÃ¢â‚¬Â¦' : 'Check out'}</Button>
       </div>
     </main>
   );

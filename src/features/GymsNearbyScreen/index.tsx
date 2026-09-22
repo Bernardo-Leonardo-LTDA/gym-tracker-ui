@@ -9,7 +9,7 @@ import {
   getStoredUserId,
   getStoredUserName,
   saveActiveSession,
-} from './services/gyms.service';
+} from './services';
 import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from './types';
 import type { Gym, PlacesApiPlace } from './types';
 import { getRequestErrorMessage, toGyms } from './utils';

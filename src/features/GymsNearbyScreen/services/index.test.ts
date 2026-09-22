@@ -13,7 +13,7 @@ import {
   fetchCheckedInUserCounts,
   fetchActiveCheckIn,
   fetchCheckedUsersInMyGym,
-} from './gyms.service';
+} from '.';
 
 const validUserId = '79aa1147-c20c-44f3-8524-b7071ee1af12';
 

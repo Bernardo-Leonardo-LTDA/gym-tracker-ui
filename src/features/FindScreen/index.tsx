@@ -10,7 +10,7 @@ import {
   getStoredUserId,
   getStoredUserName,
   saveActiveSession,
-} from '@/features/GymsNearbyScreen/services/gyms.service';
+} from '@/features/GymsNearbyScreen/services';
 
 const DEMO_GYMS = [
   {
@@ -166,7 +166,7 @@ export function FindScreen() {
               onClick={handleFind}
               disabled={isSearching}
               title={
-                trimmedAddress ? `Search near “${trimmedAddress}”` : undefined
+                trimmedAddress ? `Search near â€œ${trimmedAddress}â€` : undefined
               }
               className="w-full min-w-0 h-14 overflow-hidden rounded-2xl text-base gap-2"
             >
@@ -177,7 +177,7 @@ export function FindScreen() {
                     ? 'Searching...'
                     : 'Getting location...'
                   : trimmedAddress
-                    ? `Search near “${trimmedAddress}”`
+                    ? `Search near â€œ${trimmedAddress}â€`
                     : 'Use my location'}
               </span>
             </Button>
