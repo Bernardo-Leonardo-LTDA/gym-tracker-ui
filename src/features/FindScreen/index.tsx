@@ -12,24 +12,6 @@ import {
   saveActiveSession,
 } from '@/features/GymsNearbyScreen/services';
 
-const DEMO_GYMS = [
-  {
-    id: 'demo-ironworks-strength-club',
-    displayName: { text: 'Ironworks Strength Club' },
-    formattedAddress: 'Mission District',
-  },
-  {
-    id: 'demo-barbell-strength',
-    displayName: { text: 'Barbell & Strength Co.' },
-    formattedAddress: 'SOMA',
-  },
-  {
-    id: 'demo-powerhouse-gym',
-    displayName: { text: 'Powerhouse Gym' },
-    formattedAddress: 'Castro',
-  },
-] as const;
-
 function findByLocation(): Promise<SearchCoordinates> {
   if (!navigator.geolocation) {
     return Promise.reject(
@@ -124,12 +106,6 @@ export function FindScreen() {
     }
   }
 
-  function openDemoGyms(): void {
-    navigate('/nearby', {
-      state: { gyms: DEMO_GYMS, address: 'Demo gyms' },
-    });
-  }
-
   return (
     <div className="min-h-dvh w-full bg-background flex items-center justify-center md:py-10">
       <div className="w-full md:max-w-lg md:rounded-3xl md:border md:border-border md:shadow-2xl bg-background">
@@ -180,14 +156,6 @@ export function FindScreen() {
                     ? `Search near â€œ${trimmedAddress}â€`
                     : 'Use my location'}
               </span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={openDemoGyms}
-              className="w-full text-sm text-muted-foreground"
-            >
-              Try demo gyms
             </Button>
 
             {feedback && (
