@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Crosshair } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { gymsApi, type SearchCoordinates } from './api';
@@ -7,7 +8,9 @@ import { gymsApi, type SearchCoordinates } from './api';
 function findByLocation(): Promise<SearchCoordinates> {
   if (!navigator.geolocation) {
     return Promise.reject(
-      new Error('Location is not supported by this device.')
+      new Error(
+        'Location is unavailable. Allow location access and use HTTPS or localhost.'
+      )
     );
   }
 
@@ -18,8 +21,16 @@ function findByLocation(): Promise<SearchCoordinates> {
           latitude: coords.latitude,
           longitude: coords.longitude,
         }),
-      () => reject(new Error('Unable to access your location.')),
-      { enableHighAccuracy: true, timeout: 10_000 }
+      (error) => {
+        const message =
+          error.code === 1
+            ? 'Location permission was denied. Allow location access and try again.'
+            : error.code === 3
+              ? 'Getting your location timed out. Please try again.'
+              : 'Unable to access your location. Please try again.';
+        reject(new Error(message));
+      },
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
     );
   });
 }
@@ -29,15 +40,10 @@ function findByAddress(address: string) {
 }
 
 export function FindScreen() {
+  const navigate = useNavigate();
   const [address, setAddress] = useState('');
-  const [coordinates, setCoordinates] = useState<SearchCoordinates | null>(
-    null
-  );
   const [isSearching, setIsSearching] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    message: string;
-    isError: boolean;
-  } | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const trimmedAddress = address.trim();
   async function handleFind(): Promise<void> {
     setIsSearching(true);
@@ -46,26 +52,17 @@ export function FindScreen() {
     try {
       if (trimmedAddress) {
         const gyms = await findByAddress(trimmedAddress);
-        setFeedback({
-          message: `${gyms.length} ${gyms.length === 1 ? 'gym' : 'gyms'} found near this address.`,
-          isError: false,
-        });
+        navigate('/nearby', { state: { gyms, address: trimmedAddress } });
         return;
       }
 
-      const currentCoordinates = coordinates ?? (await findByLocation());
-      setCoordinates(currentCoordinates);
+      const currentCoordinates = await findByLocation();
       const gyms = await gymsApi.nearby(currentCoordinates);
-      setFeedback({
-        message: `${gyms.length} ${gyms.length === 1 ? 'gym' : 'gyms'} found nearby.`,
-        isError: false,
-      });
+      navigate('/nearby', { state: { gyms, address: 'Current location' } });
     } catch (error) {
-      setFeedback({
-        message:
-          error instanceof Error ? error.message : 'Something went wrong.',
-        isError: true,
-      });
+      setFeedback(
+        error instanceof Error ? error.message : 'Something went wrong.'
+      );
     } finally {
       setIsSearching(false);
     }
@@ -98,6 +95,11 @@ export function FindScreen() {
                   setAddress(e.target.value);
                   setFeedback(null);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  if (trimmedAddress && !isSearching) void handleFind();
+                }}
                 placeholder="Search by address or area"
                 className="h-14 pl-12 rounded-2xl bg-muted text-sm"
               />
@@ -124,15 +126,8 @@ export function FindScreen() {
             </Button>
 
             {feedback && (
-              <p
-                role="status"
-                className={`px-2 text-center text-xs ${
-                  feedback.isError
-                    ? 'text-destructive'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                {feedback.message}
+              <p role="alert" className="px-2 text-center text-xs text-destructive">
+                {feedback}
               </p>
             )}
           </div>

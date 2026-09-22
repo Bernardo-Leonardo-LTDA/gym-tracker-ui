@@ -12,9 +12,9 @@ const fallbackGym: Gym = {
 };
 
 describe('nearby gym result helpers', () => {
-  it('uses fallback data when navigation state has no results', () => {
+  it('uses fallback data only when navigation state has no results', () => {
     expect(toGyms(undefined, [fallbackGym])).toEqual([fallbackGym]);
-    expect(toGyms([], [fallbackGym])).toEqual([fallbackGym]);
+    expect(toGyms([], [fallbackGym])).toEqual([]);
   });
 
   it('keeps UI gyms and adapts Places API results', () => {

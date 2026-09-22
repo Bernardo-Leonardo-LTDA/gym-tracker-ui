@@ -10,7 +10,7 @@ import {
   fetchCheckedUsersInMyGym,
   getStoredUserId,
   getStoredUserName,
-} from './services/gyms.service';
+} from './services';
 import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from './types';
 import type { Gym, PlacesApiPlace, User } from './types';
 import { getRequestErrorMessage, toGyms } from './utils';
@@ -170,6 +170,11 @@ export function GymsNearbyScreen() {
             <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
               Checked in successfully!
             </div>
+          )}
+          {gyms.length === 0 && (
+            <p className="mt-5 text-center text-sm text-muted-foreground">
+              No gyms found nearby. Try another location or address.
+            </p>
           )}
           <ul className="mt-5 space-y-3">
             {gyms.map((gym) => (
