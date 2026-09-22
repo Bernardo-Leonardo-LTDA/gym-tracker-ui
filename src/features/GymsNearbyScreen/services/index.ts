@@ -7,6 +7,7 @@ import type {
   Gym,
 } from '../types';
 import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from '../types';
+import { STORAGE_ACTIVE_SESSION_KEY, type ActiveSession } from '../types';
 
 function normalizeSearchResponse(data: SearchGymsResponse): PlacesApiPlace[] {
   if (!data) return [];
@@ -61,7 +62,7 @@ function assertUuid(value: string, field: string): void {
 }
 
 export async function checkIn(payload: CheckInPayload): Promise<User> {
-  assertUuid(payload.userId, 'userId');
+  if (payload.userId) assertUuid(payload.userId, 'userId');
   if (
     !payload.userName ||
     typeof payload.userName !== 'string' ||
@@ -127,5 +128,44 @@ export function getStoredUserName(): string | null {
     return localStorage.getItem(STORAGE_USER_NAME_KEY);
   } catch {
     return null;
+  }
+}
+
+export async function fetchActiveCheckIn(
+  userId: string
+): Promise<{ gymId: string; checkedInAt: string }> {
+  const { data } = await api.get<{ gymId: string; checkedInAt: string }>(
+    '/gyms/active',
+    { params: { userId } }
+  );
+  return data;
+}
+
+export function saveActiveSession(session: ActiveSession): void {
+  try {
+    localStorage.setItem(STORAGE_ACTIVE_SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // Ignore unavailable storage.
+  }
+}
+
+export function getActiveSession(): ActiveSession | null {
+  try {
+    const value = localStorage.getItem(STORAGE_ACTIVE_SESSION_KEY);
+    if (!value) return null;
+    const session = JSON.parse(value) as ActiveSession;
+    return session.gymId && session.gymName && session.userId && session.checkedInAt
+      ? session
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearActiveSession(): void {
+  try {
+    localStorage.removeItem(STORAGE_ACTIVE_SESSION_KEY);
+  } catch {
+    // Ignore unavailable storage.
   }
 }

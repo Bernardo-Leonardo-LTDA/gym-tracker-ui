@@ -1,17 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Crosshair } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { gymsApi, type SearchCoordinates } from './api';
-import { getFindErrorMessage } from './utils';
+import {
+  fetchActiveCheckIn,
+  getActiveSession,
+  getStoredUserId,
+  getStoredUserName,
+  saveActiveSession,
+} from '@/features/GymsNearbyScreen/services';
 
 function findByLocation(): Promise<SearchCoordinates> {
   if (!navigator.geolocation) {
     return Promise.reject(
-      new Error(
-        'Location is unavailable. Allow location access and use HTTPS or localhost.'
-      )
+      new Error('Location is not supported by this device.')
     );
   }
 
@@ -22,16 +26,8 @@ function findByLocation(): Promise<SearchCoordinates> {
           latitude: coords.latitude,
           longitude: coords.longitude,
         }),
-      (error) => {
-        const message =
-          error.code === 1
-            ? 'Location permission was denied. Allow location access and try again.'
-            : error.code === 3
-              ? 'Getting your location timed out. Please try again.'
-              : 'Unable to access your location. Please try again.';
-        reject(new Error(message));
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
+      () => reject(new Error('Unable to access your location.')),
+      { enableHighAccuracy: true, timeout: 10_000 }
     );
   });
 }
@@ -43,9 +39,47 @@ function findByAddress(address: string) {
 export function FindScreen() {
   const navigate = useNavigate();
   const [address, setAddress] = useState('');
+  const [coordinates, setCoordinates] = useState<SearchCoordinates | null>(
+    null
+  );
   const [isSearching, setIsSearching] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    message: string;
+    isError: boolean;
+  } | null>(null);
   const trimmedAddress = address.trim();
+
+  useEffect(() => {
+    const savedSession = getActiveSession();
+    if (savedSession) {
+      navigate('/active', { replace: true });
+      return;
+    }
+
+    const userId = getStoredUserId();
+    const userName = getStoredUserName();
+    if (!userId || !userName) return;
+
+    let cancelled = false;
+    void fetchActiveCheckIn(userId)
+      .then((activeCheckIn) => {
+        if (cancelled) return;
+        saveActiveSession({
+          gymId: activeCheckIn.gymId,
+          gymName: 'Your gym',
+          userId,
+          userName,
+          checkedInAt: activeCheckIn.checkedInAt,
+        });
+        navigate('/active', { replace: true });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
   async function handleFind(): Promise<void> {
     setIsSearching(true);
     setFeedback(null);
@@ -57,11 +91,16 @@ export function FindScreen() {
         return;
       }
 
-      const currentCoordinates = await findByLocation();
+      const currentCoordinates = coordinates ?? (await findByLocation());
+      setCoordinates(currentCoordinates);
       const gyms = await gymsApi.nearby(currentCoordinates);
-      navigate('/nearby', { state: { gyms, address: 'Current location' } });
+      navigate('/nearby', { state: { gyms, address: 'Nearby' } });
     } catch (error) {
-      setFeedback(getFindErrorMessage(error, Boolean(trimmedAddress)));
+      setFeedback({
+        message:
+          error instanceof Error ? error.message : 'Something went wrong.',
+        isError: true,
+      });
     } finally {
       setIsSearching(false);
     }
@@ -94,11 +133,6 @@ export function FindScreen() {
                   setAddress(e.target.value);
                   setFeedback(null);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter') return;
-                  e.preventDefault();
-                  if (trimmedAddress && !isSearching) void handleFind();
-                }}
                 placeholder="Search by address or area"
                 className="h-14 pl-12 rounded-2xl bg-muted text-sm"
               />
@@ -108,7 +142,7 @@ export function FindScreen() {
               onClick={handleFind}
               disabled={isSearching}
               title={
-                trimmedAddress ? `Search near “${trimmedAddress}”` : undefined
+                trimmedAddress ? `Search near â€œ${trimmedAddress}â€` : undefined
               }
               className="w-full min-w-0 h-14 overflow-hidden rounded-2xl text-base gap-2"
             >
@@ -119,17 +153,21 @@ export function FindScreen() {
                     ? 'Searching...'
                     : 'Getting location...'
                   : trimmedAddress
-                    ? `Search near “${trimmedAddress}”`
+                    ? `Search near â€œ${trimmedAddress}â€`
                     : 'Use my location'}
               </span>
             </Button>
 
             {feedback && (
               <p
-                role="alert"
-                className="px-2 text-center text-xs text-destructive"
+                role="status"
+                className={`px-2 text-center text-xs ${
+                  feedback.isError
+                    ? 'text-destructive'
+                    : 'text-muted-foreground'
+                }`}
               >
-                {feedback}
+                {feedback.message}
               </p>
             )}
           </div>

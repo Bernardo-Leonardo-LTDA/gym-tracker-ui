@@ -26,13 +26,23 @@ export type User = {
   currentSongExternalId?: string | null;
   currentSongUpdatedAt?: string | null;
   createdAt: string;
+  checkedInAt?: string;
 };
 
 export type CheckInPayload = {
   gymId: string;
-  userId: string;
+  userId: string | null;
   userName: string;
 };
 
 export const STORAGE_USER_ID_KEY = 'gym-tracker:userId';
 export const STORAGE_USER_NAME_KEY = 'gym-tracker:userName';
+export const STORAGE_ACTIVE_SESSION_KEY = 'gym-tracker:activeSession';
+
+export type ActiveSession = {
+  gymId: string;
+  gymName: string;
+  userId: string;
+  userName: string;
+  checkedInAt: string;
+};
