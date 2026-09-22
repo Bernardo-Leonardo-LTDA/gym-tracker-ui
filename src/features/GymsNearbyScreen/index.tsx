@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { GymCard } from './components/GymCard';
@@ -15,41 +15,6 @@ import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from './types';
 import type { Gym, PlacesApiPlace, User } from './types';
 import { getRequestErrorMessage, toGyms } from './utils';
 
-const FALLBACK_GYMS: Gym[] = [
-  {
-    id: 'ironworks',
-    name: 'Ironworks Climbing Gym',
-    area: 'Mission District',
-    distance: '0.2 mi',
-    active: 14,
-    photo: 'linear-gradient(135deg, #2b2320, #14100e)',
-  },
-  {
-    id: 'barbell',
-    name: 'Barbell & Strength Co.',
-    area: 'SOMA',
-    distance: '0.6 mi',
-    active: 7,
-    photo: 'linear-gradient(135deg, #2a1a1c, #140d0e)',
-  },
-  {
-    id: 'powerhouse',
-    name: 'Powerhouse Gym SF',
-    area: 'Castro',
-    distance: '1.1 mi',
-    active: 22,
-    photo: 'linear-gradient(135deg, #1f242a, #0f1114)',
-  },
-  {
-    id: 'fortitude',
-    name: 'Fortitude Strength Club',
-    area: 'Hayes Valley',
-    distance: '1.4 mi',
-    active: 3,
-    photo: 'linear-gradient(135deg, #212a29, #101413)',
-  },
-];
-
 type LocationState = { gyms?: (Gym | PlacesApiPlace)[]; address?: string };
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -63,11 +28,11 @@ export function GymsNearbyScreen() {
   const [checkedInGymId, setCheckedInGymId] = useState<string | null>(null);
   const [checkedUsers, setCheckedUsers] = useState<User[]>([]);
   const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
-  const gyms = useMemo(
-    () => toGyms(location.state?.gyms, FALLBACK_GYMS),
-    [location.state?.gyms]
-  );
+  const searchResults = location.state?.gyms;
+  const hasSearchResults = Array.isArray(searchResults);
+  const gyms = useMemo(() => toGyms(searchResults), [searchResults]);
   useEffect(() => {
+    if (!hasSearchResults || gyms.length === 0) return;
     let cancelled = false;
 
     void fetchCheckedInUserCounts(gyms.map((gym) => gym.id))
@@ -81,7 +46,7 @@ export function GymsNearbyScreen() {
     return () => {
       cancelled = true;
     };
-  }, [gyms]);
+  }, [gyms, hasSearchResults]);
 
   function goBack(): void {
     if (window.history.length > 1) {
@@ -135,6 +100,8 @@ export function GymsNearbyScreen() {
     persistUser(userId, userName);
     return { userId, userName };
   }
+
+  if (!hasSearchResults) return <Navigate to="/" replace />;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background md:py-10">

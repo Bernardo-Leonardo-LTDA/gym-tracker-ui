@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { gymsApi, type SearchCoordinates } from './api';
+import { getFindErrorMessage } from './utils';
 
 function findByLocation(): Promise<SearchCoordinates> {
   if (!navigator.geolocation) {
@@ -60,9 +61,7 @@ export function FindScreen() {
       const gyms = await gymsApi.nearby(currentCoordinates);
       navigate('/nearby', { state: { gyms, address: 'Current location' } });
     } catch (error) {
-      setFeedback(
-        error instanceof Error ? error.message : 'Something went wrong.'
-      );
+      setFeedback(getFindErrorMessage(error, Boolean(trimmedAddress)));
     } finally {
       setIsSearching(false);
     }
@@ -126,7 +125,10 @@ export function FindScreen() {
             </Button>
 
             {feedback && (
-              <p role="alert" className="px-2 text-center text-xs text-destructive">
+              <p
+                role="alert"
+                className="px-2 text-center text-xs text-destructive"
+              >
                 {feedback}
               </p>
             )}

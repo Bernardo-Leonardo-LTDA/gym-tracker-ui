@@ -1,11 +1,8 @@
 import { adaptPlaceToGym } from './services';
 import type { Gym, PlacesApiPlace } from './types';
 
-export function toGyms(
-  results: (Gym | PlacesApiPlace)[] | undefined,
-  fallback: Gym[]
-): Gym[] {
-  if (!results) return fallback;
+export function toGyms(results: (Gym | PlacesApiPlace)[] | undefined): Gym[] {
+  if (!results) return [];
 
   return results.map((result, index) =>
     isGym(result) ? result : adaptPlaceToGym(result, index)
