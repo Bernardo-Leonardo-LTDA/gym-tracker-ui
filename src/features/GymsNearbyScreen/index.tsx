@@ -1,54 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { GymCard } from './components/GymCard';
 import {
   checkIn,
   fetchCheckedInUserCounts,
-  fetchCheckedUsersInMyGym,
   getStoredUserId,
   getStoredUserName,
+  saveActiveSession,
 } from './services/gyms.service';
 import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from './types';
-import type { Gym, PlacesApiPlace, User } from './types';
+import type { Gym, PlacesApiPlace } from './types';
 import { getRequestErrorMessage, toGyms } from './utils';
-
-const FALLBACK_GYMS: Gym[] = [
-  {
-    id: 'ironworks',
-    name: 'Ironworks Climbing Gym',
-    area: 'Mission District',
-    distance: '0.2 mi',
-    active: 14,
-    photo: 'linear-gradient(135deg, #2b2320, #14100e)',
-  },
-  {
-    id: 'barbell',
-    name: 'Barbell & Strength Co.',
-    area: 'SOMA',
-    distance: '0.6 mi',
-    active: 7,
-    photo: 'linear-gradient(135deg, #2a1a1c, #140d0e)',
-  },
-  {
-    id: 'powerhouse',
-    name: 'Powerhouse Gym SF',
-    area: 'Castro',
-    distance: '1.1 mi',
-    active: 22,
-    photo: 'linear-gradient(135deg, #1f242a, #0f1114)',
-  },
-  {
-    id: 'fortitude',
-    name: 'Fortitude Strength Club',
-    area: 'Hayes Valley',
-    distance: '1.4 mi',
-    active: 3,
-    photo: 'linear-gradient(135deg, #212a29, #101413)',
-  },
-];
 
 type LocationState = { gyms?: (Gym | PlacesApiPlace)[]; address?: string };
 const UUID_RE =
@@ -59,12 +23,9 @@ export function GymsNearbyScreen() {
   const location = useLocation() as { state: LocationState | null };
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [successId, setSuccessId] = useState<string | null>(null);
-  const [checkedInGymId, setCheckedInGymId] = useState<string | null>(null);
-  const [checkedUsers, setCheckedUsers] = useState<User[]>([]);
   const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
   const gyms = useMemo(
-    () => toGyms(location.state?.gyms, FALLBACK_GYMS),
+    () => toGyms(location.state?.gyms, []),
     [location.state?.gyms]
   );
   useEffect(() => {
@@ -93,23 +54,23 @@ export function GymsNearbyScreen() {
 
   async function handleCheckIn(gym: Gym): Promise<void> {
     setError(null);
-    setSuccessId(null);
     setCheckingId(gym.id);
     try {
       const user = getCheckInUser();
       if (!user) return;
       const checkedInUser = await checkIn({ gymId: gym.id, ...user });
-      const currentGymUsers = await fetchCheckedUsersInMyGym(
-        gym.id,
-        checkedInUser.id
-      );
-      setSuccessId(gym.id);
-      setCheckedInGymId(gym.id);
-      setCheckedUsers(currentGymUsers);
-      setActiveCounts((currentCounts) => ({
-        ...currentCounts,
-        [gym.id]: currentGymUsers.length,
-      }));
+      if (!checkedInUser.checkedInAt) {
+        throw new Error('Check-in time was not returned. Please try again.');
+      }
+      persistUser(checkedInUser.id, checkedInUser.name);
+      saveActiveSession({
+        gymId: gym.id,
+        gymName: gym.name,
+        userId: checkedInUser.id,
+        userName: checkedInUser.name,
+        checkedInAt: checkedInUser.checkedInAt,
+      });
+      navigate('/active');
     } catch (checkInError) {
       setError(getRequestErrorMessage(checkInError));
     } finally {
@@ -117,7 +78,7 @@ export function GymsNearbyScreen() {
     }
   }
 
-  function getCheckInUser(): { userId: string; userName: string } | null {
+  function getCheckInUser(): { userId: string | null; userName: string } | null {
     let userId = getStoredUserId();
     let userName = getStoredUserName();
     if (userId && !UUID_RE.test(userId)) {
@@ -131,8 +92,6 @@ export function GymsNearbyScreen() {
         return null;
       }
     }
-    userId ??= uuidv4();
-    persistUser(userId, userName);
     return { userId, userName };
   }
 
@@ -166,48 +125,23 @@ export function GymsNearbyScreen() {
               {error}
             </div>
           )}
-          {successId && (
-            <div className="mt-4 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground">
-              Checked in successfully!
+          {gyms.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-border bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
+              No gyms were found. Go back and try another search.
             </div>
-          )}
-          <ul className="mt-5 space-y-3">
+          ) : <ul className="mt-5 space-y-3">
             {gyms.map((gym) => (
               <li key={gym.id}>
                 <GymCard
                   gym={gym}
                   activeCount={activeCounts[gym.id] ?? gym.active}
                   isChecking={checkingId === gym.id}
-                  isCheckedIn={successId === gym.id}
+                  isCheckedIn={false}
                   onCheckIn={handleCheckIn}
                 />
-                {checkedInGymId === gym.id && (
-                  <section className="mt-3 rounded-2xl border border-border bg-muted/40 p-4">
-                    <h2 className="text-sm font-semibold text-foreground">
-                      Lifting with you
-                    </h2>
-                    <ul className="mt-3 space-y-2">
-                      {checkedUsers.map((checkedUser) => (
-                        <li
-                          key={checkedUser.id}
-                          className="flex items-center justify-between gap-3 text-sm"
-                        >
-                          <span className="truncate font-medium text-foreground">
-                            {checkedUser.name}
-                          </span>
-                          <span className="truncate text-xs text-muted-foreground">
-                            {checkedUser.currentSongTitle
-                              ? `${checkedUser.currentSongTitle} — ${checkedUser.currentSongArtist ?? 'Unknown artist'}`
-                              : 'No music playing'}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                )}
               </li>
             ))}
-          </ul>
+          </ul>}
         </section>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import {
   checkIn,
   fetchCheckedInUserCounts,
+  fetchActiveCheckIn,
   fetchCheckedUsersInMyGym,
 } from './gyms.service';
 
@@ -47,6 +48,18 @@ describe('checkIn', () => {
     });
   });
 
+  it('creates a first-time user with a null user ID', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: { id: validUserId } });
+
+    await checkIn({ gymId: 'place-1', userId: null, userName: 'Ana' });
+
+    expect(api.post).toHaveBeenCalledWith('/gyms/check-in', {
+      gymId: 'place-1',
+      userId: null,
+      userName: 'Ana',
+    });
+  });
+
   it('gets checked-in users for the current user gym', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [] });
 
@@ -70,6 +83,21 @@ describe('checkIn', () => {
 
     expect(api.post).toHaveBeenCalledWith('/gyms/checked-users/counts', {
       gymIds: ['place-1', 'place-2'],
+    });
+  });
+
+  it('gets an existing active check-in for direct active-page restoration', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { gymId: 'place-1', checkedInAt: '2026-09-22T00:00:00.000Z' },
+    });
+
+    await expect(fetchActiveCheckIn(validUserId)).resolves.toEqual({
+      gymId: 'place-1',
+      checkedInAt: '2026-09-22T00:00:00.000Z',
+    });
+
+    expect(api.get).toHaveBeenCalledWith('/gyms/active', {
+      params: { userId: validUserId },
     });
   });
 });

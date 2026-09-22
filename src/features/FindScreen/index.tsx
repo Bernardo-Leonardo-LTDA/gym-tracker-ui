@@ -1,8 +1,34 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Crosshair } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { gymsApi, type SearchCoordinates } from './api';
+import {
+  fetchActiveCheckIn,
+  getActiveSession,
+  getStoredUserId,
+  getStoredUserName,
+  saveActiveSession,
+} from '@/features/GymsNearbyScreen/services/gyms.service';
+
+const DEMO_GYMS = [
+  {
+    id: 'demo-ironworks-strength-club',
+    displayName: { text: 'Ironworks Strength Club' },
+    formattedAddress: 'Mission District',
+  },
+  {
+    id: 'demo-barbell-strength',
+    displayName: { text: 'Barbell & Strength Co.' },
+    formattedAddress: 'SOMA',
+  },
+  {
+    id: 'demo-powerhouse-gym',
+    displayName: { text: 'Powerhouse Gym' },
+    formattedAddress: 'Castro',
+  },
+] as const;
 
 function findByLocation(): Promise<SearchCoordinates> {
   if (!navigator.geolocation) {
@@ -29,6 +55,7 @@ function findByAddress(address: string) {
 }
 
 export function FindScreen() {
+  const navigate = useNavigate();
   const [address, setAddress] = useState('');
   const [coordinates, setCoordinates] = useState<SearchCoordinates | null>(
     null
@@ -39,6 +66,38 @@ export function FindScreen() {
     isError: boolean;
   } | null>(null);
   const trimmedAddress = address.trim();
+
+  useEffect(() => {
+    const savedSession = getActiveSession();
+    if (savedSession) {
+      navigate('/active', { replace: true });
+      return;
+    }
+
+    const userId = getStoredUserId();
+    const userName = getStoredUserName();
+    if (!userId || !userName) return;
+
+    let cancelled = false;
+    void fetchActiveCheckIn(userId)
+      .then((activeCheckIn) => {
+        if (cancelled) return;
+        saveActiveSession({
+          gymId: activeCheckIn.gymId,
+          gymName: 'Your gym',
+          userId,
+          userName,
+          checkedInAt: activeCheckIn.checkedInAt,
+        });
+        navigate('/active', { replace: true });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
   async function handleFind(): Promise<void> {
     setIsSearching(true);
     setFeedback(null);
@@ -46,20 +105,14 @@ export function FindScreen() {
     try {
       if (trimmedAddress) {
         const gyms = await findByAddress(trimmedAddress);
-        setFeedback({
-          message: `${gyms.length} ${gyms.length === 1 ? 'gym' : 'gyms'} found near this address.`,
-          isError: false,
-        });
+        navigate('/nearby', { state: { gyms, address: trimmedAddress } });
         return;
       }
 
       const currentCoordinates = coordinates ?? (await findByLocation());
       setCoordinates(currentCoordinates);
       const gyms = await gymsApi.nearby(currentCoordinates);
-      setFeedback({
-        message: `${gyms.length} ${gyms.length === 1 ? 'gym' : 'gyms'} found nearby.`,
-        isError: false,
-      });
+      navigate('/nearby', { state: { gyms, address: 'Nearby' } });
     } catch (error) {
       setFeedback({
         message:
@@ -69,6 +122,12 @@ export function FindScreen() {
     } finally {
       setIsSearching(false);
     }
+  }
+
+  function openDemoGyms(): void {
+    navigate('/nearby', {
+      state: { gyms: DEMO_GYMS, address: 'Demo gyms' },
+    });
   }
 
   return (
@@ -121,6 +180,14 @@ export function FindScreen() {
                     ? `Search near “${trimmedAddress}”`
                     : 'Use my location'}
               </span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={openDemoGyms}
+              className="w-full text-sm text-muted-foreground"
+            >
+              Try demo gyms
             </Button>
 
             {feedback && (
