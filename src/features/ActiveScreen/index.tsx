@@ -45,7 +45,7 @@ function Avatar({ user, size = 'size-12' }: { user: Pick<User, 'id' | 'name' | '
 }
 
 function trackText(user: User): string {
-  if (user.currentSongTitle) return `${user.currentSongTitle} Ã¢â‚¬â€ ${user.currentSongArtist ?? 'Unknown artist'}`;
+  if (user.currentSongTitle) return `${user.currentSongTitle} — ${user.currentSongArtist ?? 'Unknown artist'}`;
   return 'No music playing';
 }
 
@@ -141,24 +141,24 @@ export function ActiveScreen() {
     }
   }
 
-  if (!session) return isRestoring ? <main className="grid min-h-dvh place-items-center bg-background text-sm text-muted-foreground">Restoring your check-inÃ¢â‚¬Â¦</main> : null;
+  if (!session) return isRestoring ? <main className="grid min-h-dvh place-items-center bg-background text-sm text-muted-foreground">Restoring your check-in…</main> : null;
 
   return (
     <main className="min-h-dvh bg-background px-[22px] py-7 text-foreground md:py-10">
       <div className="mx-auto w-full max-w-[376px]">
-        <section className="rounded-[24px] border border-white/10 bg-[linear-gradient(125deg,#1a1919_0%,#211715_100%)] p-5 shadow-2xl">
+        <section className="rounded-[24px] border border-border bg-card p-5 shadow-2xl">
           <div className="flex items-center justify-between text-xs font-semibold"><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-primary" />LIVE</span><time className="font-normal text-muted-foreground">{elapsed(currentUser.checkedInAt ?? session.checkedInAt, now)}</time></div>
           <div className="mt-4 flex items-center gap-3"><Avatar user={currentUser} size="size-14" /><div className="min-w-0"><p className="text-[11px] tracking-wide text-muted-foreground">YOU'RE AT</p><h1 className="truncate text-lg font-bold">{session.gymName}</h1></div></div>
           <div className="mt-5 flex h-[70px] w-full items-center gap-3 rounded-[22px] border border-white/10 bg-black/10 px-3 text-left">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,#ffbd79,#e26056)] text-black"><Music2 size={20} /></span>
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground"><Music2 size={20} /></span>
             <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">No music playing</p><p className="truncate text-xs text-muted-foreground">Music sharing will be available soon</p></div>
           </div>
         </section>
         <section className="mt-7"><div className="flex items-center justify-between"><h2 className="text-base font-bold">On the floor</h2><span className="text-xs text-muted-foreground">{others.length} active</span></div>
           {error && <div role="status" className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}<Button size="icon-xs" variant="ghost" onClick={() => void refresh()} aria-label="Retry refresh"><RefreshCw /></Button></div>}
-          {loading ? <p className="mt-6 text-sm text-muted-foreground">Loading the floorÃ¢â‚¬Â¦</p> : others.length === 0 ? <p className="mt-6 text-sm text-muted-foreground">You have the floor to yourself right now.</p> : <ul className="mt-3 divide-y divide-white/5">{others.map((user) => <li key={user.id} className="flex min-h-[76px] items-center gap-3 py-3"><Avatar user={user} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{user.name}</p><p className="truncate text-xs text-muted-foreground">{trackText(user)}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/10 text-[#ffca63]" aria-hidden="true"><Music2 size={17} /></span></li>)}</ul>}
+          {loading ? <p className="mt-6 text-sm text-muted-foreground">Loading the floor…</p> : others.length === 0 ? <p className="mt-6 text-sm text-muted-foreground">You have the floor to yourself right now.</p> : <ul className="mt-3 divide-y divide-white/5">{others.map((user) => <li key={user.id} className="flex min-h-[76px] items-center gap-3 py-3"><Avatar user={user} /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{user.name}</p><p className="truncate text-xs text-muted-foreground">{trackText(user)}</p></div><span className="grid size-11 shrink-0 place-items-center rounded-full border border-white/10 text-primary" aria-hidden="true"><Music2 size={17} /></span></li>)}</ul>}
         </section>
-        <Button variant="ghost" onClick={() => void handleCheckOut()} disabled={isCheckingOut} className="mt-8 w-full text-muted-foreground"><LogOut />{isCheckingOut ? 'Checking outÃ¢â‚¬Â¦' : 'Check out'}</Button>
+        <Button variant="ghost" onClick={() => void handleCheckOut()} disabled={isCheckingOut} className="mt-8 w-full text-muted-foreground"><LogOut />{isCheckingOut ? 'Checking out…' : 'Check out'}</Button>
       </div>
     </main>
   );

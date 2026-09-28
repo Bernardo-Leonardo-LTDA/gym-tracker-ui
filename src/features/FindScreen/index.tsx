@@ -142,7 +142,7 @@ export function FindScreen() {
               onClick={handleFind}
               disabled={isSearching}
               title={
-                trimmedAddress ? `Search near â€œ${trimmedAddress}â€` : undefined
+                trimmedAddress ? `Search near “${trimmedAddress}”` : undefined
               }
               className="w-full min-w-0 h-14 overflow-hidden rounded-2xl text-base gap-2"
             >
@@ -153,7 +153,7 @@ export function FindScreen() {
                     ? 'Searching...'
                     : 'Getting location...'
                   : trimmedAddress
-                    ? `Search near â€œ${trimmedAddress}â€`
+                    ? `Search near “${trimmedAddress}”`
                     : 'Use my location'}
               </span>
             </Button>
