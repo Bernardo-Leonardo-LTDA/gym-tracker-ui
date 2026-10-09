@@ -1,39 +1,79 @@
-import api from '@/config/api';
+import { api } from '@/lib/api';
+import type { MusicTrack } from '@/features/GymsNearbyScreen/types';
+import { getSessionHeaders } from '@/features/GymsNearbyScreen/services/session';
 
-export interface SpotifyTokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
-export interface SpotifyTrack {
-  artist: string;
-  durationMs: number;
-  isPlaying: boolean;
-  progressMs: number;
-  trackName: string;
+export interface MusicSharingStatus {
+  connected: boolean;
+  enabled: boolean;
+  provider: 'spotify' | null;
+  state:
+    | 'disconnected'
+    | 'paused'
+    | 'playing'
+    | 'idle'
+    | 'unavailable'
+    | 'permission-denied';
+  music: MusicTrack | null;
 }
 
 export const spotifyApi = {
-  exchangeCode: async (
-    code: string,
-    codeVerifier: string
-  ): Promise<SpotifyTokenResponse> => {
-    const { data } = await api.post<SpotifyTokenResponse>(
-      '/auth/spotify/callback',
-      { code, codeVerifier }
+  mobileConfig: async (): Promise<{
+    clientId: string;
+    redirectUrl: string;
+    scope: string;
+  }> => {
+    const { data } = await api.get<{
+      clientId: string;
+      redirectUrl: string;
+      scope: string;
+    }>('/auth/spotify/mobile-config');
+    return data;
+  },
+
+  connect: async (
+    userId: string,
+    accessToken: string
+  ): Promise<MusicSharingStatus> => {
+    const { data } = await api.post<MusicSharingStatus>(
+      '/gyms/music/connect',
+      {
+        userId,
+        provider: 'spotify',
+        accessToken,
+      },
+      { headers: getSessionHeaders(userId) }
     );
     return data;
   },
 
-  getCurrentlyPlaying: async (accessToken: string): Promise<SpotifyTrack> => {
-    const { data } = await api.get<SpotifyTrack>('/spotify/currently-playing', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+  resume: async (userId: string): Promise<MusicSharingStatus> => {
+    const { data } = await api.post<MusicSharingStatus>(
+      '/gyms/music/resume',
+      {
+        userId,
+      },
+      { headers: getSessionHeaders(userId) }
+    );
     return data;
   },
 
-  syncWeb: async (accessToken: string, userId: string): Promise<void> => {
-    await api.post('/spotify/web/sync', { accessToken, userId });
+  disable: async (userId: string): Promise<MusicSharingStatus> => {
+    const { data } = await api.post<MusicSharingStatus>(
+      '/gyms/music/disable',
+      {
+        userId,
+      },
+      { headers: getSessionHeaders(userId) }
+    );
+    return data;
+  },
+
+  disconnect: async (userId: string): Promise<MusicSharingStatus> => {
+    const { data } = await api.post<MusicSharingStatus>(
+      '/gyms/music/disconnect',
+      { userId },
+      { headers: getSessionHeaders(userId) }
+    );
+    return data;
   },
 };

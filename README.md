@@ -5,7 +5,6 @@
 - Vite (Build)
 - Capacitor (Multi platform dev)
 - ShadCN (Components and Theme)
-- Zustand (State control)
 
 ---
 
@@ -17,12 +16,15 @@ Create a `.env` file at the root with the following variables:
 # API
 VITE_API_BASE_URL=YOUR-API-BASE-URL-HERE
 
-# Spotify
-VITE_SPOTIFY_CLIENT_ID=YOUR-CLIENT-ID-HERE
-VITE_SPOTIFY_REDIRECT_URI_WEB=YOUR-WEB-REDIRECT-URI-HERE
-VITE_SPOTIFY_REDIRECT_URI_MOBILE=YOUR-MOBILE-REDIRECT-URI-HERE
-VITE_SPOTIFY_SCOPES=YOUR-SPOTIFY-SCOPES-HERE
 ```
+
+Spotify is configured on the backend. The app reads its public mobile OAuth
+settings from `/auth/spotify/mobile-config`.
+
+The app saves the private credential returned by check-in and sends it in the
+Authorization header for session and music operations. Guest sessions saved by
+older versions without this credential must start a new check-in; the saved name
+is retained. Deploy the matching backend and UI changes together.
 
 When testing on Android (Capacitor), `127.0.0.1` points to the device/emulator itself, not your computer backend.
 
@@ -77,6 +79,16 @@ If Android Studio or Capacitor cannot find the SDK, verify the `sdk.dir` value i
 
 ## Project Architecture
 
+The active check-in screen receives participants and music status through an
+authenticated Server-Sent Events (SSE) stream at `/gyms/events`. Streaming fetch
+sends the private check-in credential in the Authorization header. The client
+reconnects automatically, receives a fresh snapshot, and clears live music while
+disconnected. Check-in, checkout, and sharing actions still use regular HTTP requests.
+Check-in and checkout changes are pushed immediately; Spotify changes follow the
+backend's 30-second provider refresh. Deploy the frontend and backend together,
+disable proxy buffering for the stream, and allow its 15-second heartbeats.
+HTTP/2 is recommended when serving multiple tabs.
+
 This project follows a **Feature-Driven (Modular) Architecture**. Code is organized around business domains and features inside the `src/features/` folder, rather than split entirely by technical types.
 
 ### 📁 Directory Structure
@@ -86,14 +98,12 @@ src/
 ├── assets/             # Global static assets
 ├── components/
 │   └── ui/             # Shared global UI components (ShadCN)
-├── config/             # Global configurations, environment variables, and constants
 ├── features/           # Core business domains
 │   └── dashboard/      # Dashboard domain
 │       ├── components/ # Dashboard-specific elements
 │       └── index.ts
 ├── layouts/            # Global layout wrappers
 ├── routes/             # Centralized routing configuration and route guards
-├── stores/             # Global state management instances (Zustand)
 ├── types/              # Shared, global TypeScript definitions
 ├── utils/              # Global helper functions
 ├── App.tsx             # Root application component

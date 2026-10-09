@@ -1,26 +1,10 @@
 import { api } from '@/lib/api';
-import type {
-  CheckInPayload,
-  PlacesApiPlace,
-  SearchGymsResponse,
-  User,
-  Gym,
-} from '../types';
+import type { CheckInPayload, PlacesApiPlace, User, Gym } from '../types';
 import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from '../types';
 import { STORAGE_ACTIVE_SESSION_KEY, type ActiveSession } from '../types';
-
-function normalizeSearchResponse(data: SearchGymsResponse): PlacesApiPlace[] {
-  if (!data) return [];
-  if (Array.isArray(data)) return data as PlacesApiPlace[];
-  if (
-    typeof data === 'object' &&
-    'places' in data &&
-    Array.isArray((data as { places: unknown }).places)
-  ) {
-    return (data as { places: PlacesApiPlace[] }).places;
-  }
-  return [];
-}
+import { STORAGE_SESSION_TOKEN_KEY } from '../types';
+import { getSessionHeaders, getStoredSessionToken } from './session';
+export { getStoredSessionToken } from './session';
 
 export function adaptPlaceToGym(place: PlacesApiPlace, index: number): Gym {
   const fallbackPhotos = [
@@ -38,16 +22,6 @@ export function adaptPlaceToGym(place: PlacesApiPlace, index: number): Gym {
     active: 0,
     photo: fallbackPhotos[index % fallbackPhotos.length],
   };
-}
-
-export async function searchGymsNearby(
-  address: string,
-  radius = 1500
-): Promise<PlacesApiPlace[]> {
-  const { data } = await api.get<SearchGymsResponse>('/gyms/search', {
-    params: { address, radius },
-  });
-  return normalizeSearchResponse(data);
 }
 
 const UUID_RE =
@@ -83,21 +57,13 @@ export async function checkIn(payload: CheckInPayload): Promise<User> {
     try {
       localStorage.setItem(STORAGE_USER_ID_KEY, data.id);
       if (data.name) localStorage.setItem(STORAGE_USER_NAME_KEY, data.name);
+      if (data.sessionToken)
+        localStorage.setItem(STORAGE_SESSION_TOKEN_KEY, data.sessionToken);
     } catch {
       // Ignore unavailable storage.
     }
   }
 
-  return data;
-}
-
-export async function fetchCheckedUsersInMyGym(
-  gymId: string,
-  userId: string
-): Promise<User[]> {
-  const { data } = await api.get<User[]>('/gyms/checked-users', {
-    params: { gymId, userId },
-  });
   return data;
 }
 
@@ -112,7 +78,11 @@ export async function fetchCheckedInUserCounts(
 }
 
 export async function checkOut(userId: string): Promise<void> {
-  await api.post('/gyms/check-out', { userId });
+  await api.post(
+    '/gyms/check-out',
+    { userId },
+    { headers: getSessionHeaders(userId) }
+  );
 }
 
 export function getStoredUserId(): string | null {
@@ -136,7 +106,7 @@ export async function fetchActiveCheckIn(
 ): Promise<{ gymId: string; checkedInAt: string }> {
   const { data } = await api.get<{ gymId: string; checkedInAt: string }>(
     '/gyms/active',
-    { params: { userId } }
+    { params: { userId }, headers: getSessionHeaders(userId) }
   );
   return data;
 }
@@ -153,8 +123,18 @@ export function getActiveSession(): ActiveSession | null {
   try {
     const value = localStorage.getItem(STORAGE_ACTIVE_SESSION_KEY);
     if (!value) return null;
+    if (!getStoredSessionToken()) {
+      // Legacy anonymous sessions have no proof of ownership. Renew the guest
+      // check-in instead of requesting a credential with its public user ID.
+      localStorage.removeItem(STORAGE_ACTIVE_SESSION_KEY);
+      localStorage.removeItem(STORAGE_USER_ID_KEY);
+      return null;
+    }
     const session = JSON.parse(value) as ActiveSession;
-    return session.gymId && session.gymName && session.userId && session.checkedInAt
+    return session.gymId &&
+      session.gymName &&
+      session.userId &&
+      session.checkedInAt
       ? session
       : null;
   } catch {
@@ -162,9 +142,15 @@ export function getActiveSession(): ActiveSession | null {
   }
 }
 
-export function clearActiveSession(): void {
+export function clearActiveSession(expectedToken?: string | null): void {
   try {
+    if (
+      expectedToken !== undefined &&
+      getStoredSessionToken() !== expectedToken
+    )
+      return;
     localStorage.removeItem(STORAGE_ACTIVE_SESSION_KEY);
+    localStorage.removeItem(STORAGE_SESSION_TOKEN_KEY);
   } catch {
     // Ignore unavailable storage.
   }

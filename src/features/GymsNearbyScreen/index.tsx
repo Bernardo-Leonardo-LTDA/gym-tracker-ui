@@ -10,7 +10,6 @@ import {
   getStoredUserName,
   saveActiveSession,
 } from './services';
-import { STORAGE_USER_ID_KEY, STORAGE_USER_NAME_KEY } from './types';
 import type { Gym, PlacesApiPlace } from './types';
 import { getRequestErrorMessage, toGyms } from './utils';
 
@@ -25,7 +24,7 @@ export function GymsNearbyScreen() {
   const [error, setError] = useState<string | null>(null);
   const [activeCounts, setActiveCounts] = useState<Record<string, number>>({});
   const gyms = useMemo(
-    () => toGyms(location.state?.gyms, []),
+    () => toGyms(location.state?.gyms),
     [location.state?.gyms]
   );
   useEffect(() => {
@@ -59,10 +58,9 @@ export function GymsNearbyScreen() {
       const user = getCheckInUser();
       if (!user) return;
       const checkedInUser = await checkIn({ gymId: gym.id, ...user });
-      if (!checkedInUser.checkedInAt) {
-        throw new Error('Check-in time was not returned. Please try again.');
+      if (!checkedInUser.checkedInAt || !checkedInUser.sessionToken) {
+        throw new Error('Check-in session was not returned. Please try again.');
       }
-      persistUser(checkedInUser.id, checkedInUser.name);
       saveActiveSession({
         gymId: gym.id,
         gymName: gym.name,
@@ -78,8 +76,11 @@ export function GymsNearbyScreen() {
     }
   }
 
-  function getCheckInUser(): { userId: string | null; userName: string } | null {
-    let userId = getStoredUserId();
+  function getCheckInUser(): {
+    userId: string | null;
+    userName: string;
+  } | null {
+    const userId = getStoredUserId();
     let userName = getStoredUserName();
     if (userId && !UUID_RE.test(userId)) {
       setError('Your saved user ID is invalid. Clear site data and try again.');
@@ -129,30 +130,23 @@ export function GymsNearbyScreen() {
             <div className="mt-5 rounded-2xl border border-border bg-muted/40 px-4 py-5 text-sm text-muted-foreground">
               No gyms were found. Go back and try another search.
             </div>
-          ) : <ul className="mt-5 space-y-3">
-            {gyms.map((gym) => (
-              <li key={gym.id}>
-                <GymCard
-                  gym={gym}
-                  activeCount={activeCounts[gym.id] ?? gym.active}
-                  isChecking={checkingId === gym.id}
-                  isCheckedIn={false}
-                  onCheckIn={handleCheckIn}
-                />
-              </li>
-            ))}
-          </ul>}
+          ) : (
+            <ul className="mt-5 space-y-3">
+              {gyms.map((gym) => (
+                <li key={gym.id}>
+                  <GymCard
+                    gym={gym}
+                    activeCount={activeCounts[gym.id] ?? gym.active}
+                    isChecking={checkingId === gym.id}
+                    isCheckedIn={false}
+                    onCheckIn={handleCheckIn}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </div>
   );
-}
-
-function persistUser(userId: string, userName: string): void {
-  try {
-    localStorage.setItem(STORAGE_USER_ID_KEY, userId);
-    localStorage.setItem(STORAGE_USER_NAME_KEY, userName);
-  } catch {
-    // Ignore unavailable storage.
-  }
 }
