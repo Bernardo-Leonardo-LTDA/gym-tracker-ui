@@ -9,6 +9,7 @@ import {
   getActiveSession,
   getStoredUserId,
   getStoredUserName,
+  getStoredSessionToken,
   saveActiveSession,
 } from '@/features/GymsNearbyScreen/services';
 
@@ -58,12 +59,13 @@ export function FindScreen() {
 
     const userId = getStoredUserId();
     const userName = getStoredUserName();
-    if (!userId || !userName) return;
+    const sessionToken = getStoredSessionToken();
+    if (!userId || !userName || !sessionToken) return;
 
     let cancelled = false;
     void fetchActiveCheckIn(userId)
       .then((activeCheckIn) => {
-        if (cancelled) return;
+        if (cancelled || getStoredSessionToken() !== sessionToken) return;
         saveActiveSession({
           gymId: activeCheckIn.gymId,
           gymName: 'Your gym',

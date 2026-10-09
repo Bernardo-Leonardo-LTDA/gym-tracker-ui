@@ -14,19 +14,22 @@ export type PlacesApiPlace = {
   rating?: number;
 };
 
-export type SearchGymsResponse =
-  PlacesApiPlace[] | { places: PlacesApiPlace[] };
-
 export type User = {
   id: string;
   name: string;
   avatarUrl?: string | null;
-  currentSongTitle?: string | null;
-  currentSongArtist?: string | null;
-  currentSongExternalId?: string | null;
-  currentSongUpdatedAt?: string | null;
+  music?: MusicTrack | null;
   createdAt: string;
   checkedInAt?: string;
+  sessionToken?: string;
+};
+
+export type MusicTrack = {
+  title: string;
+  artist: string;
+  source: string;
+  isPlaying: true;
+  updatedAt: string;
 };
 
 export type CheckInPayload = {
@@ -38,6 +41,7 @@ export type CheckInPayload = {
 export const STORAGE_USER_ID_KEY = 'gym-tracker:userId';
 export const STORAGE_USER_NAME_KEY = 'gym-tracker:userName';
 export const STORAGE_ACTIVE_SESSION_KEY = 'gym-tracker:activeSession';
+export const STORAGE_SESSION_TOKEN_KEY = 'gym-tracker:sessionToken';
 
 export type ActiveSession = {
   gymId: string;

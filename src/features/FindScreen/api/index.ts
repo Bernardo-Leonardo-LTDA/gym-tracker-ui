@@ -17,25 +17,8 @@ export interface SearchCoordinates {
   longitude: number;
 }
 
-export interface GymUser {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-  currentSongTitle: string | null;
-  currentSongArtist: string | null;
-  currentSongExternalId: string | null;
-  currentSongUpdatedAt: string | null;
-  createdAt: string;
-}
-
 interface SearchGymsResponse {
   places?: GymSearchResult[];
-}
-
-export interface CheckInRequest {
-  gymId: string;
-  userId: string | null;
-  userName?: string;
 }
 
 export const gymsApi = {
@@ -68,24 +51,5 @@ export const gymsApi = {
       },
     });
     return data;
-  },
-
-  getCheckedUsers: async (
-    gymId: string,
-    userId: string
-  ): Promise<GymUser[]> => {
-    const { data } = await api.get<GymUser[]>('/gyms/checked-users', {
-      params: { gymId, userId },
-    });
-    return data;
-  },
-
-  checkIn: async (request: CheckInRequest): Promise<GymUser> => {
-    const { data } = await api.post<GymUser>('/gyms/check-in', request);
-    return data;
-  },
-
-  checkOut: async (userId: string): Promise<void> => {
-    await api.post('/gyms/check-out', { userId });
   },
 };

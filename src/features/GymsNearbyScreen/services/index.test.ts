@@ -8,18 +8,29 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { api } from '@/lib/api';
+import { STORAGE_SESSION_TOKEN_KEY, STORAGE_USER_ID_KEY } from '../types';
 import {
   checkIn,
   fetchCheckedInUserCounts,
   fetchActiveCheckIn,
-  fetchCheckedUsersInMyGym,
 } from '.';
 
 const validUserId = '79aa1147-c20c-44f3-8524-b7071ee1af12';
+const sessionToken = '11111111-1111-4111-8111-111111111111';
+const headers = { Authorization: `Bearer ${sessionToken}` };
 
 describe('checkIn', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    const storage = new Map([
+      [STORAGE_USER_ID_KEY, validUserId],
+      [STORAGE_SESSION_TOKEN_KEY, sessionToken],
+    ]);
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    });
   });
 
   it('rejects an invalid user ID before sending a request', async () => {
@@ -60,18 +71,6 @@ describe('checkIn', () => {
     });
   });
 
-  it('gets checked-in users for the current user gym', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [] });
-
-    await expect(
-      fetchCheckedUsersInMyGym('place-1', validUserId)
-    ).resolves.toEqual([]);
-
-    expect(api.get).toHaveBeenCalledWith('/gyms/checked-users', {
-      params: { gymId: 'place-1', userId: validUserId },
-    });
-  });
-
   it('gets the public attendee counts for all requested gyms', async () => {
     vi.mocked(api.post).mockResolvedValue({
       data: { 'place-1': 4, 'place-2': 0 },
@@ -98,6 +97,21 @@ describe('checkIn', () => {
 
     expect(api.get).toHaveBeenCalledWith('/gyms/active', {
       params: { userId: validUserId },
+      headers,
     });
+  });
+
+  it('persists the private credential returned at check-in', async () => {
+    vi.mocked(api.post).mockResolvedValue({
+      data: {
+        id: validUserId,
+        name: 'Ana',
+        sessionToken: 'new-private-credential',
+      },
+    });
+    await checkIn({ gymId: 'place-1', userId: null, userName: 'Ana' });
+    expect(localStorage.getItem(STORAGE_SESSION_TOKEN_KEY)).toBe(
+      'new-private-credential'
+    );
   });
 });
