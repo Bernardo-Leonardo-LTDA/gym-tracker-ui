@@ -104,6 +104,20 @@ describe('Authenticated SSE floor', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('stops on permanent client errors but retries rate limiting', async () => {
+    const h = handlers();
+    fetchMock
+      .mockResolvedValueOnce(new Response(null, { status: 429 }))
+      .mockResolvedValueOnce(new Response(null, { status: 400 }));
+    live = connectFloor('viewer', h);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(h.unavailable).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(h.ended).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('stops reconnecting when the server revokes the check-in', async () => {
     const h = handlers();
     let channel!: ReturnType<typeof stream>;

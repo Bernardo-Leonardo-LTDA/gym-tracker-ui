@@ -3,6 +3,7 @@ import { act, type ComponentProps } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MusicSharingCard } from './MusicSharingCard';
+import { connectionError } from './connection-error';
 import { spotifyApi, type MusicSharingStatus } from './api';
 
 vi.mock('./api', () => ({ spotifyApi: { disable: vi.fn() } }));
@@ -81,6 +82,25 @@ describe('Music card live state', () => {
     expect(container.textContent).toContain('Sharing is off');
     expect(container.textContent).not.toContain('Old track');
     expect(onChanged).toHaveBeenCalledOnce();
+  });
+
+  it('offers to connect again when the Spotify token expired', async () => {
+    await render({ ...playing, state: 'reconnect-required', music: null });
+    expect(container.textContent).toContain('Spotify connection expired');
+    expect(container.textContent).toContain('Share what I’m listening to');
+  });
+
+  it('separates check-in rejection from Spotify token errors', () => {
+    const failure = (status: number, reason?: string) => ({
+      response: { status, data: { reason } },
+    });
+    expect(connectionError(failure(401))).toContain('check-in has ended');
+    expect(connectionError(failure(400, 'reconnect-required'))).toContain(
+      'Connect Spotify again'
+    );
+    expect(connectionError(failure(400, 'permission-denied'))).toContain(
+      'denied access'
+    );
   });
 
   it('clears playback and disables actions when the live connection is unavailable', async () => {

@@ -62,7 +62,13 @@ export function connectFloor(
         cache: 'no-store',
       });
       if (!current()) return;
-      if (response.status === 401 || response.status === 403) {
+      // 400/401/403/404 cannot succeed on retry; 408 and 429 are transient.
+      if (
+        response.status >= 400 &&
+        response.status < 500 &&
+        response.status !== 408 &&
+        response.status !== 429
+      ) {
         ended();
         return;
       }

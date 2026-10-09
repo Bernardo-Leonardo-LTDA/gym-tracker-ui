@@ -212,7 +212,15 @@ export function ActiveScreen() {
       await checkOut(session.userId);
       clearActiveSession(sessionToken);
       navigate('/', { replace: true });
-    } catch {
+    } catch (cause: unknown) {
+      const status = (cause as { response?: { status?: number } })?.response
+        ?.status;
+      // The check-in already ended (expired, revoked or checked out elsewhere).
+      if (status === 401 || status === 403) {
+        clearActiveSession(sessionToken);
+        navigate('/', { replace: true });
+        return;
+      }
       setError('Could not check out. Please try again.');
     } finally {
       setIsCheckingOut(false);

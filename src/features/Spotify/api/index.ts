@@ -12,7 +12,8 @@ export interface MusicSharingStatus {
     | 'playing'
     | 'idle'
     | 'unavailable'
-    | 'permission-denied';
+    | 'permission-denied'
+    | 'reconnect-required';
   music: MusicTrack | null;
 }
 

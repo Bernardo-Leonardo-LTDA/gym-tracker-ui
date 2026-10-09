@@ -3,8 +3,10 @@ import { GenericOAuth2 } from '@capacitor-community/generic-oauth2';
 import { Capacitor } from '@capacitor/core';
 import { Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 import { spotifyApi, type MusicSharingStatus } from './api';
 import { freshMusic } from './music-presence';
+import { connectionError } from './connection-error';
 import {
   consumeSpotifyCallback,
   OAUTH_STATE_KEY,
@@ -17,18 +19,6 @@ let pendingSpotifyCallback = consumeSpotifyCallback(
   window,
   getStoredSessionToken()
 );
-
-function connectionError(error: unknown): string {
-  const status =
-    typeof error === 'object' && error !== null && 'response' in error
-      ? (error as { response?: { status?: number } }).response?.status
-      : undefined;
-  if (status === 401)
-    return 'Spotify connection expired. Disconnect and connect again.';
-  if (status === 403)
-    return 'Spotify denied access. Check account permissions and connect again.';
-  return 'Could not update music sharing. Check your connection and try again.';
-}
 
 export function MusicSharingCard({
   userId,
@@ -139,8 +129,7 @@ export function MusicSharingCard({
       OAUTH_STATE_KEY,
       JSON.stringify({ state, sessionToken })
     );
-    const apiBase =
-      import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:3000';
+    const apiBase = api.defaults.baseURL?.replace(/\/$/, '') ?? '';
     window.location.assign(
       `${apiBase}/auth/spotify/login?state=${encodeURIComponent(state)}`
     );
@@ -159,9 +148,14 @@ export function MusicSharingCard({
             ? 'Sharing is off. Other people cannot see your music.'
             : status?.state === 'permission-denied'
               ? 'Spotify denied playback access. Disconnect and reconnect.'
-              : status?.state === 'unavailable'
-                ? 'Playback unavailable. Reconnect Spotify if this continues.'
-                : 'Share Spotify playback from any device on your account.';
+              : status?.state === 'reconnect-required'
+                ? 'Spotify connection expired. Connect Spotify again.'
+                : status?.state === 'unavailable'
+                  ? 'Playback unavailable. Reconnect Spotify if this continues.'
+                  : 'Share Spotify playback from any device on your account.';
+  // An expired token can only be fixed by a new OAuth flow; offer it directly.
+  const needsConnect =
+    !status?.connected || status.state === 'reconnect-required';
 
   return (
     <div className="mt-4 rounded-[20px] border border-border bg-black/15 p-3">
@@ -197,12 +191,12 @@ export function MusicSharingCard({
           {error}
         </p>
       )}
-      <details className="mt-3" open={!status?.connected || undefined}>
+      <details className="mt-3" open={needsConnect || undefined}>
         <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
           {status?.connected ? 'Manage music sharing' : 'Share your music'}
         </summary>
         <div className="mt-3 flex flex-wrap gap-2">
-          {!status?.connected ? (
+          {needsConnect ? (
             <Button
               size="sm"
               disabled={pending || loading}
@@ -210,7 +204,7 @@ export function MusicSharingCard({
             >
               Share what I’m listening to
             </Button>
-          ) : status.enabled ? (
+          ) : status?.enabled ? (
             <Button
               size="sm"
               variant="outline"
